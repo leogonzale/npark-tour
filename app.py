@@ -5,10 +5,18 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_openai import OpenAI
+from langchain_core.output_parsers import JsonOutputParser
 
 
-llm = OpenAI()
 
+#llm = OpenAI()
+
+
+llm = OpenAI(
+    max_tokens = -1
+)
+ 
+parser = JsonOutputParser()
 # app will run at: http://127.0.0.1:5000/
 
 # Initialize logging
@@ -113,13 +121,19 @@ def view_trip():
   log.info(prompt)
   
   response = llm.invoke(prompt)
-  log.info(response)
+  #log.info(response)
+  output = parser.parse(response)
+
+  log.info(output)
 
   '''
   log.info(prompt)
   return render_template("view-trip.html")
   '''
-  return render_template("view-trip.html")
+  #return render_template("view-trip.html")
+
+  return render_template("view-trip.html", output = output)
+
 # Run the flask server
 if __name__ == "__main__":
     app.run()
