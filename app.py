@@ -27,7 +27,9 @@ log = logging.getLogger("app")
 app = Flask(__name__)
 
 	
-def build_new_trip_prompt(form_data):
+#def build_new_trip_prompt():
+	
+def build_new_trip_prompt_template():
   examples = [
    {  
       "prompt":
@@ -65,13 +67,17 @@ They want to hiking, swimming. Create a daily itinerary for this trip using this
   few_shot_prompt = FewShotPromptTemplate(
     examples = examples,
     example_prompt = example_prompt,
-    suffix = "{input}",
-    input_variables = ["input"],
+    
+
+    suffix = "This trip is to {location} between {trip_start} and {trip_end}. This person will be traveling {traveling_with} and would like to stay in {lodging}. They want to {adventure}. Create a daily itinerary for this trip using this information. You are a backend data processor that is part of our site's programmatic workflow. Output the itinerary as only JSON with no text before or after the JSON.",#"{input}",
+    input_variables =["location", "trip_start", "trip_end", "traveling_with", "lodging", "adventure"], #["input"],
   )
 
-  return few_shot_prompt.format(input = "This trip is to " + form_data["location"] + " between " + form_data["trip_start"] + " and "
-   +  form_data["trip_end"] + ". This person will be traveling " + form_data["traveling_with_list"] + " and would like to stay in " + form_data["lodging_list"]
-    + ". They want to " + form_data["adventure_list"] + ". Create an daily itinerary for this trip using this information. You are a backend data processor that is part of our app’s programmatic workflow. Output the itinerary as only JSON with no text before or after the JSON.")
+
+  return few_shot_prompt
+  #return few_shot_prompt.format(input = "This trip is to " + form_data["location"] + " between " + form_data["trip_start"] + " and "
+  # +  form_data["trip_end"] + ". This person will be traveling " + form_data["traveling_with_list"] + " and would like to stay in " + form_data["lodging_list"]
+   # + ". They want to " + form_data["adventure_list"] + ". Create an daily itinerary for this trip using this information. You are a backend data processor that is part of our app’s programmatic workflow. Output the itinerary as only JSON with no text before or after the JSON.")
 
 
   
@@ -106,23 +112,38 @@ def view_trip():
   adventure_list = ", ".join(request.form.getlist("adventure"))
  
 
-  cleaned_form_data = {
+  #cleaned_form_data = {
+  #output = chain.invoke({
+  #      "location": request.form["location-search"],
+  #      "trip_start": request.form["trip-start"],
+  #      "trip_end": request.form["trip-end"],
+   #     "traveling_with_list": traveling_with_list,
+   #     "lodging_list": lodging_list,
+   #     "adventure_list": adventure_list,
+   #     "trip_name": request.form["trip-name"]
+   # }
+
+  #prompt = build_new_trip_prompt(cleaned_form_data)
+  prompt = build_new_trip_prompt_template()
+  	
+  chain = prompt | llm | parser
+
+  output = chain.invoke({
         "location": request.form["location-search"],
         "trip_start": request.form["trip-start"],
         "trip_end": request.form["trip-end"],
-        "traveling_with_list": traveling_with_list,
-        "lodging_list": lodging_list,
-        "adventure_list": adventure_list,
+        "traveling_with": traveling_with_list,
+        "lodging": lodging_list,
+        "adventure": adventure_list,
         "trip_name": request.form["trip-name"]
-    }
+    })
 
-  prompt = build_new_trip_prompt(cleaned_form_data)
 
   log.info(prompt)
   
-  response = llm.invoke(prompt)
+  #response = llm.invoke(prompt)
   #log.info(response)
-  output = parser.parse(response)
+  #output = parser.parse(response)
 
   log.info(output)
 
